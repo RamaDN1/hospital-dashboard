@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سجل مراجعات المريض</title>
+  <link rel="stylesheet" href="patientsrev.css"/>
+</head>
+<body>
+    <header>
+        <img src="images/logo.jpeg" width="150">
+    </header><br>
+
+  <!-- زر القائمة -->
+  <div class="toggle-menu-btn" id="menuButton" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+
+  <!-- القائمة الجانبية -->
+  <div class="sidebar-menu" id="sideMenu">
+    <a href="home.html">Home</a>
+    <a href="creat_entry.html">Creat_Entry  </a>
+    <a href="room.html">Rooms</a>
+    <a href="valve&time.html">valve&time </a>
+    <a href="Features.html">Features</a>
+    <a href="reviwe.html">Review </a>
+    <a href="help.html">Help</a>
+  </div>
+
+  <!-- الغطاء -->
+  <div class="menu-overlay" id="overlay" onclick="closeMenu()"></div>
+
+  <div class="container">
+    <a class="back-btn" href="creat_entry.html"><i class='bx bx-arrow-back'></i> الرجوع إلى الصفحة</a>
+    <h2>📋 سجل مراجعات المريض</h2>
+    <table id="reviewHistoryTable">
+      <thead>
+        <tr>
+          <th>📅 التاريخ</th>
+          <th>⏰ الوقت</th>
+          <th>📝 ملاحظات الطبيب</th>
+          <th>🏥 سبب الدخول</th>
+          <th>🔄 تحديث الملاحظات</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    // دالة لتحويل الوقت إلى تنسيق 12 ساعة مع AM/PM
+    function formatTime(time) {
+      const [hour, minute] = time.split(":");
+      let hour12 = parseInt(hour, 10);
+      const ampm = hour12 >= 12 ? 'م' : 'ص';
+      hour12 = hour12 % 12;
+      if (hour12 === 0) hour12 = 12; // لضمان أن الساعة 0 تكون 12
+      return `${hour12}:${minute} ${ampm}`;
+    }
+
+    // دالة لتنسيق التاريخ
+    function formatDate(date) {
+      return new Date(date).toLocaleDateString('ar-SA', { calendar: 'gregory' }); // تنسيق التاريخ بشكل موحد
+    }
+
+    // تحميل سجل المراجعات للمريض
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('id');
+
+    if (patientId) {
+      loadReviewHistory(patientId);
+    } else {
+      document.querySelector("#reviewHistoryTable tbody").innerHTML =
+        "<tr><td colspan='5'>❌ لم يتم تحديد المريض</td></tr>";
+    }
+
+    async function loadReviewHistory(patientId) {
+      try {
+          const res = await fetch(`/api/reviews/patient/${patientId}`, {
+              headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+              }
+          });
+          const data = await res.json();
+
+          console.log('Received review history data:', data);
+
+          const tbody = document.querySelector("#reviewHistoryTable tbody");
+          tbody.innerHTML = "";
+
+          if (!data.history || data.history.length === 0) {
+              tbody.innerHTML = "<tr><td colspan='5'>لا توجد مراجعات مسجلة</td></tr>";
+              return;
+          }
+
+          data.history.forEach(row => {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                  <td>${formatDate(row.review_date)}</td> <!-- تنسيق التاريخ -->
+                  <td>${formatTime(row.review_time)}</td> <!-- تنسيق الوقت -->
+                  <td><textarea class="doctor-notes" id="doctorNotes-${row.id}" placeholder="ملاحظات الطبيب">${row.doctor_notes || ''}</textarea></td>
+                  <td>${row.admission_reason || '—'}</td>
+                  <td><button onclick="updateNotes('${row.id}')">تحديث الملاحظات</button></td>
+              `;
+              tbody.appendChild(tr);
+          });
+      } catch (err) {
+          console.error("Error loading review history:", err);
+          document.querySelector("#reviewHistoryTable tbody").innerHTML =
+              "<tr><td colspan='5'>⚠️ فشل في تحميل البيانات</td></tr>";
+      }
+    }
+
+    async function updateNotes(reviewId) {
+      console.log("معرف المراجعة المراد تحديثها:", reviewId);
+      
+      if (!reviewId) {
+          alert('خطأ: لم يتم تحديد معرف المراجعة');
+          return;
+      }
+
+      const notes = document.getElementById(`doctorNotes-${reviewId}`).value;
+
+      if (!notes.trim()) {
+          alert('الرجاء إدخال ملاحظات الطبيب.');
+          return;
+      }
+
+      try {
+          const response = await fetch(`/api/reviews/update/${reviewId}`, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+              },
+              body: JSON.stringify({ doctor_notes: notes })
+          });
+
+          const data = await response.json();
+          if (response.ok) {
+              alert('تم تحديث الملاحظات بنجاح');
+          } else {
+              alert(`فشل في تحديث الملاحظات: ${data.error}`);
+          }
+      } catch (err) {
+          console.error('Error updating notes:', err);
+          alert('حدث خطأ أثناء تحديث الملاحظات');
+      }
+    }
+  </script>
+</body>
+</html>
+
+
+
+

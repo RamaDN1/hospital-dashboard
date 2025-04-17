@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+    <section class="ll">
+        <div class="container" id="container">
+            <div class="form-container sign-up">
+                <form id="registerForm">
+                    <h1>Create Account</h1>
+                    <input type="text" name="name" placeholder="Name" required>
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="password" name="password" placeholder="Password" required>
+                    <span>or use your email for registration</span>
+                    <div class="social-icons">
+                        <a href="#" class="icon"><i class='bx bxl-facebook'></i></a>
+                        <a href="#" class="icon"><i class='bx bxl-google'></i></a>
+                        <a href="#" class="icon"><i class='bx bxl-github'></i></a>
+                        <a href="#" class="icon"><i class='bx bxl-linkedin'></i></a>
+                    </div>
+                    <button type="submit">Sign Up</button>
+                </form>
+            </div>
+            <div class="form-container sign-in">
+                <form>
+                    <h1>Sign In</h1>
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="password" name="password" placeholder="Password" required>
+                    <a href="#">Forget Your Password?</a>
+                    <span>or use your email and password</span>
+                    <div class="social-icons">
+                        <a href="#" class="icon"><i class='bx bxl-facebook'></i></a>
+                        <a href="#" class="icon"><i class='bx bxl-google'></i></a>
+                        <a href="#" class="icon"><i class='bx bxl-github'></i></a>
+                        <a href="#" class="icon"><i class='bx bxl-linkedin'></i></a>
+                    </div>
+                    <button type="submit">Sign In</button>
+                </form>
+            </div>
+            <div class="toggle-container">
+                <div class="toggle">
+                    <div class="toggle-panel toggle-left">
+                        <h1>Welcome Back!</h1>
+                        <p>Enter your personal details to use all site features</p>
+                        <button class="hidden" id="login">Sign In</button>
+                    </div>
+                    <div class="toggle-panel toggle-right">
+                        <h1>Hello, Friend!</h1>
+                        <p>Register with your personal details to use all site features</p>
+                        <button class="hidden" id="register">Sign Up</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const container = document.getElementById('container');
+                const registerBtn = document.getElementById('register');
+                const loginBtn = document.getElementById('login');
+
+                registerBtn.addEventListener('click', () => {
+                    container.classList.add("active");
+                });
+
+                loginBtn.addEventListener('click', () => {
+                    container.classList.remove("active");
+                });
+
+                // Sign in logic
+                const form = document.querySelector('.sign-in form');
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const email = form.email.value.trim();
+                    const password = form.password.value;
+                    const submitBtn = form.querySelector('button');
+                    const originalBtnText = submitBtn.textContent;
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> جاري المعالجة...';
+
+                    try {
+                        if (!email || !password) {
+                            throw new Error('البريد الإلكتروني وكلمة المرور مطلوبان');
+                        }
+
+                        const response = await fetch('http://localhost:3000/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ email, password })
+                        });
+
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            const errorText = await response.text();
+                            throw new Error(`استجابة غير متوقعة: ${errorText.substring(0, 100)}`);
+                        }
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.message || 'فشل تسجيل الدخول');
+                        }
+
+                        localStorage.setItem('authToken', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+
+                        const redirectPath = data.redirectTo || '/home.html';
+                        window.location.href = redirectPath;
+
+                    } catch (error) {
+                        showAlert('error', error.message || 'حدث خطأ أثناء تسجيل الدخول');
+                        form.password.value = '';
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalBtnText;
+                    }
+                });
+
+                // Register logic
+                const registerForm = document.getElementById("registerForm");
+
+                registerForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+
+                    const name = registerForm.name.value.trim();
+                    const email = registerForm.email.value.trim();
+                    const password = registerForm.password.value;
+
+                    const submitBtn = registerForm.querySelector('button');
+                    const originalBtnText = submitBtn.textContent;
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> جاري المعالجة...';
+
+                    try {
+                        if (!name || !email || !password) {
+                            throw new Error("جميع الحقول مطلوبة");
+                        }
+
+                        const response = await fetch('http://localhost:3000/api/register', {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json"
+                            },
+                            body: JSON.stringify({ name, email, password })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.message || "فشل التسجيل");
+                        }
+
+                        showAlert("success", "تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.");
+                        registerForm.reset();
+                    } catch (err) {
+                        showAlert("error", err.message || "حدث خطأ أثناء التسجيل");
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalBtnText;
+                    }
+                });
+            });
+
+            function showAlert(type, message) {
+                const alertBox = document.createElement('div');
+                alertBox.className = `alert alert-${type}`;
+                alertBox.innerHTML = `
+                    <div class="alert-content">
+                        <i class="bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}"></i>
+                        <span>${message}</span>
+                    </div>
+                    <i class="bx bx-x alert-close"></i>
+                `;
+
+                document.body.appendChild(alertBox);
+
+                setTimeout(() => {
+                    alertBox.classList.add('fade-out');
+                    setTimeout(() => alertBox.remove(), 300);
+                }, 5000);
+
+                alertBox.querySelector('.alert-close').addEventListener('click', () => {
+                    alertBox.classList.add('fade-out');
+                    setTimeout(() => alertBox.remove(), 300);
+                });
+            }
+        </script>
+    </section>
+</body>
+</html>
+
+
+
+
+
+
+
+

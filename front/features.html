@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features</title>
+    <link rel="stylesheet" href="features.css">
+</head>
+<body>
+    <header>
+        <img src="images/logo.jpeg"  width="150">
+    </header><br>
+    <!-- زر القائمة -->
+  <div class="toggle-menu-btn" id="menuButton" onclick="toggleMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <!-- القائمة الجانبية -->
+  <div class="sidebar-menu" id="sideMenu">
+    <a href="home.html">Home</a>
+    <a href="creat_entry.html">Creat_Entry  </a>
+    <a href="room.html">Rooms</a>
+    <a href="valve&time.html">valve&time </a>
+    <a href="Features.html">Features</a>
+    <a href="reviwe.html">Review </a>
+    <a href="help.html">Help</a>
+  </div>
+
+  <!-- الغطاء -->
+  <div class="menu-overlay" id="overlay" onclick="closeMenu()"></div>
+
+  <script>
+    const menu = document.getElementById("sideMenu");
+    const button = document.getElementById("menuButton");
+    const overlay = document.getElementById("overlay");
+
+    function toggleMenu() {
+      menu.classList.toggle("open");
+      button.classList.toggle("open");
+      overlay.classList.toggle("active");
+    }
+
+    function closeMenu() {
+      menu.classList.remove("open");
+      button.classList.remove("open");
+      overlay.classList.remove("active");
+    }
+  </script>
+
+    <section class="cards" id="Features">
+        <h2 class="title">Advanced Features</h2>
+        <div class="content">
+            <div class="card">
+                <div class="icon">⚖️</div>
+                <div class="info">
+                  <h3>Precision Weight Sensing</h3>
+                  <p>High-precision sensors continuously monitor fluid weight with accuracy down to 0.1 grams for exact measurements.</p>
+                </div> 
+            </div>
+            <div class="card">
+                <div class="icon">🔄</div>
+                <div class="info">
+                  <h3> Automatic Valve Control</h3>
+                  <p>Smart valves automatically close when fluid reaches preset thresholds, preventing overflow</p>
+                </div> 
+            </div>
+            <div class="card">
+                <div class="icon">📡</div>
+                <div class="info">
+                    <h3>Real-Time Monitoring</h3>
+                    <p>Live data transmission to hospital systems for continuous tracking and quick response.</p>
+                </div> 
+            </div>
+            <div class="card">
+                <div class="icon">📱</div>
+                <div class="info">
+                    <h3>Mobile App Integration</h3>
+                    <p>Monitor and control IV drips remotely using a user-friendly mobile application.</p>
+                </div> 
+            </div>
+            <div class="card">
+                <div class="icon">🔔</div>
+                <div class="info">
+                    <h3>Smart Alerts & Notifications</h3>
+                    <p>Instant alerts via SMS or app notifications when fluid levels are low or system intervention is needed.</p>
+                </div> 
+            </div>
+            
+            <div class="card">
+                <div class="icon">🛡️</div>
+                <div class="info">
+                    <h3>Safety Mechanisms</h3>
+                    <p>Automatic emergency shutoff and leak detection for enhanced patient safety.</p>
+                </div> 
+            </div>
+        </div>
+        </div>
+        <br>
+    <br>
+    
+    </section>
+    
+</body>
+</html>

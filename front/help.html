@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+    <!-- Header with Hamburger Menu -->
+    <header>
+        <img src="images/logo.jpeg"  width="200">
+        <div class="menu-btn" id="menuButton">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </header>
+    
+    <!-- زر القائمة -->
+  <div class="toggle-menu-btn" id="menuButton" onclick="toggleMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <!-- القائمة الجانبية -->
+  <div class="sidebar-menu" id="sideMenu">
+    <a href="home.html">Home</a>
+    <a href="creat_entry.html">Creat_Entry  </a>
+    <a href="room.html">Rooms</a>
+    <a href="valve&time.html">valve&time </a>
+    <a href="Features.html">Features</a>
+    <a href="reviwe.html">Review </a>
+    <a href="help.html">Help</a>
+  </div>
+  <script>
+    const menu = document.getElementById("sideMenu");
+    const button = document.getElementById("menuButton");
+    const overlay = document.getElementById("overlay");
+
+    function toggleMenu() {
+      menu.classList.toggle("open");
+      button.classList.toggle("open");
+      overlay.classList.toggle("active");
+    }
+
+    function closeMenu() {
+      menu.classList.remove("open");
+      button.classList.remove("open");
+      overlay.classList.remove("active");
+    }
+  </script>
+    
+    <!-- Menu Overlay -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <h1>Contact Us</h1>
+        
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="organization">Hospital Name</label>
+                <input type="text" id="organization" name="organization">
+            </div>
+            
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <input type="text" id="subject" name="subject" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">How can we help?</label>
+                <textarea id="message" name="message" maxlength="2500" required></textarea>
+                <div class="char-count"><span id="charCount">0</span>/2500 characters</div>
+            </div>
+            
+            <div class="recaptcha">
+                <input type="checkbox" id="robotCheck" required>
+                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA">
+                <span>I'm not a robot</span>
+            </div>
+
+            <!-- Privacy Policy Agreement -->
+            <div class="form-group">
+                <input type="checkbox" id="privacyCheck" required>
+                <label for="privacyCheck">I accept the <a href="#">Privacy Policy</a></label>
+            </div>
+            
+            <div class="buttons">
+                <button type="button" class="btn btn-clear" id="clearBtn">Clear</button>
+                <button type="submit" class="btn btn-submit">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Menu Toggle
+            const menuButton = document.getElementById('menuButton');
+            const sideMenu = document.getElementById('sideMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+
+            menuButton.addEventListener('click', function () {
+                sideMenu.classList.toggle('open');
+                menuOverlay.classList.toggle('active');
+                document.body.style.overflow = sideMenu.classList.contains('open') ? 'hidden' : 'auto';
+            });
+
+            menuOverlay.addEventListener('click', function () {
+                sideMenu.classList.remove('open');
+                menuOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+
+            // Character Counter
+            const messageTextarea = document.getElementById('message');
+            const charCount = document.getElementById('charCount');
+
+            messageTextarea.addEventListener('input', function () {
+                charCount.textContent = this.value.length;
+            });
+
+            // Clear Button
+            const clearBtn = document.getElementById('clearBtn');
+            clearBtn.addEventListener('click', function () {
+                document.getElementById('contactForm').reset();
+                charCount.textContent = '0';
+            });
+
+            // Submit Button
+            const contactForm = document.getElementById('contactForm');
+            contactForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                if (!document.getElementById('robotCheck').checked) {
+                    alert('Please confirm you are not a robot');
+                    return;
+                }
+
+                if (!document.getElementById('privacyCheck').checked) {
+                    alert('Please accept the Privacy Policy');
+                    return;
+                }
+
+                // Successful submission
+                alert('Your message has been sent successfully! We will contact you soon.');
+                contactForm.reset();
+                charCount.textContent = '0';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms</title>
+    <link rel="stylesheet" href="room.css">
+    <!-- أيقونات Boxicons -->
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+            
+</head>
+<body>
+    <header>
+        <img src="images/logo.jpeg" width="150">
+        <span id="userGreeting" style="float: right; margin: 10px;"></span>
+    </header>
+
+    <div class="RRoomm">
+        <h2>Patient Room Management System</h2>
+        <div id="loading">
+            <i class='bx bx-loader-alt bx-spin'></i> جاري تحميل بيانات الغرف...
+        </div>
+        <div id="floors-container" style="display: none;"></div>
+        <div id="patient-info" class="patient-info" style="display: none;"></div>
+    </div>
+
+    <!-- زر القائمة -->
+    <div class="menu-button" id="menuButton" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- القائمة الجانبية -->
+    <div class="side-menu" id="sideMenu">
+        <a href="home.html">Home</a>
+        <a href="creat_entry.html">Creat_Entry</a>
+        <a href="room.html">Rooms</a>
+        <a href="valve&time.html">valve&time</a>
+        <a href="Features.html">Features</a>
+        <a href="reviwe.html">reviwe</a>
+        <a href="help.html">Help</a>
+        <a href="#" id="logoutBtn">Logout</a>
+    </div>
+
+    <!-- غطاء شفاف عند فتح القائمة -->
+    <div class="overlay" id="overlay" onclick="closeMenu()"></div>
+
+    <script>
+        // بيانات الغرف (سيتم تحديثها من الخلفية)
+        let floors = [
+    { name: "First Floor", rooms: [{ id: 101, room_number: 101, occupied: true }] },
+    { name: "Second Floor", rooms: [{ id: 201, room_number: 201, occupied: false }] }
+];
+
+    
+        // جلب بيانات الغرف من الخلفية
+        async function fetchRooms() {
+    const loading = document.getElementById('loading');
+    const container = document.getElementById('floors-container');
+    const token = localStorage.getItem('authToken');
+
+    try {
+        if (!token) {
+            throw new Error("الرجاء تسجيل الدخول");
+        }
+
+        loading.style.display = "block";
+        container.style.display = "none";
+
+        const response = await fetch('/api/rooms', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch rooms");
+        }
+
+        const data = await response.json();
+        console.log("API response:", data);
+
+        if (!data.rooms || !Array.isArray(data.rooms)) {
+            throw new Error("Invalid rooms data received");
+        }
+
+        // تنظيم الغرف حسب الطوابق
+        const newFloors = {};  // استخدم متغير جديد هنا بدلاً من `floors`
+        data.rooms.forEach(room => {
+            if (!newFloors[room.floor]) {
+                newFloors[room.floor] = [];
+            }
+            newFloors[room.floor].push({
+                id: room.id,
+                room_number: room.room_number,
+                floor: room.floor,
+                occupied: room.occupied,
+                patient: {
+                    name: room.patient_name || "",
+                    age: room.patient_age || "",
+                    doctor: room.doctor_name || "",
+                    blood_group: room.blood_group || "",
+                    drip_status: room.valve_status || ""
+                }
+            });
+        });
+
+        // تحويل إلى مصفوفة بالطريقة التي تحتاجها دالة renderFloors
+        const floorsArray = Object.keys(newFloors).map(floorNumber => ({
+            name: `Floor ${floorNumber}`,
+            rooms: newFloors[floorNumber]
+        }));
+
+        // تحديث المتغير العام `floors`
+        floors = floorsArray;
+        renderFloors();
+
+    } catch (err) {
+        console.error("Error fetching rooms:", err);
+        alert(err.message || "حدث خطأ أثناء تحميل البيانات");
+    } finally {
+        loading.style.display = "none";
+        container.style.display = "block";
+    }
+}
+
+
+function updateRoomsUI(rooms) {
+  const container = document.getElementById("floors-container");
+  container.innerHTML = "";
+  
+  // تنظيم الغرف حسب الطوابق
+  const floors = {};
+  rooms.forEach(room => {
+    if (!floors[room.floor]) {
+      floors[room.floor] = [];
+    }
+    floors[room.floor].push(room);
+  });
+  
+  // عرض الغرف لكل طابق
+  Object.entries(floors).forEach(([floorNumber, floorRooms]) => {
+    const floorDiv = document.createElement("div");
+    floorDiv.classList.add("floor");
+    floorDiv.innerHTML = `<h3>Floor ${floorNumber}</h3>`;
+    
+    floorRooms.forEach(room => {
+      const card = document.createElement("div");
+      card.classList.add("room-card", room.occupied ? "occupied" : "empty");
+      
+      card.innerHTML = `
+        <i class='bx bx-bed icon'></i>
+        <div class="room-id">${room.room_number}</div>
+        <div class="status">${room.occupied ? "Occupied" : "Available"}</div>
+        <div class="action">${room.occupied ? "View Details" : "Book Room"}</div>
+      `;
+      
+      card.onclick = () => showPatientInfo(room);
+      floorDiv.appendChild(card);
+    });
+    
+    container.appendChild(floorDiv);
+  });
+}
+
+        // عرض الغرف
+        function renderFloors() {
+            let container = document.getElementById("floors-container");
+            container.innerHTML = "";
+
+            floors.forEach(floor => {
+                let floorDiv = document.createElement("div");
+                floorDiv.classList.add("floor");
+                floorDiv.innerHTML = `<h3>${floor.name}</h3>`;
+
+                floor.rooms.forEach(room => {
+                    let card = document.createElement("div");
+                    card.classList.add("room-card", room.occupied ? "occupied" : "empty");
+
+                    const icon = "<i class='bx bx-bed icon'></i>";
+                    const roomId = `<div class="room-id">${room.room_number}</div>`;
+                    const status = `<div class="status">${room.occupied ? "Occupied" : "Available"}</div>`;
+                    const action = `<div class="action">${room.occupied ? "View Details" : "Book Room"}</div>`;
+
+                    card.innerHTML = icon + roomId + status + action;
+                    card.onclick = () => showPatientInfo(room);
+                    floorDiv.appendChild(card);
+                });
+
+                container.appendChild(floorDiv);
+            });
+        }
+
+        // عرض معلومات المريض
+        function showPatientInfo(room) {
+            let infoDiv = document.getElementById("patient-info");
+            infoDiv.style.display = "block";
+ 
+            if (!room.occupied) {
+                infoDiv.innerHTML = `
+                    <p style="color: green; font-weight: bold;">🚪 Room ${room.room_number} is available</p>
+                    <button onclick="reserveRoom(${room.id})">Book Room</button>
+                `;
+                return;
+            }
+
+            let patient = room.patient;
+            infoDiv.innerHTML = `
+                <p><strong>رقم الغرفة:</strong> ${room.room_number}</p>
+                <p><strong>اسم المريض:</strong> ${patient.name}</p>
+                <p><strong>العمر:</strong> ${patient.age}</p>
+                <p><strong>الطبيب:</strong> ${patient.doctor}</p>
+                <p><strong>فصيلة الدم:</strong> ${patient.blood_group}</p>
+                <p><strong>حالة المغذي:</strong> ${patient.drip_status}</p>
+                <button onclick="checkoutPatient(${room.id})">Check Out</button>
+            `;
+        }
+
+        // حجز غرفة
+        function reserveRoom(roomId) {
+            window.location.href = `creat_entry.html?room_id=${roomId}`;
+        }
+
+        // خروج المريض
+        async function checkoutPatient(roomId) {
+  if (!confirm("هل أنت متأكد من تسجيل خروج المريض؟")) return;
+
+  try {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`/api/rooms/${roomId}/checkout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || result.details || 'فشل في تسجيل الخروج');
+    }
+
+    alert(result.message);
+    fetchRooms(); // إعادة تحميل البيانات
+    document.getElementById('patient-info').style.display = 'none';
+
+  } catch (error) {
+    console.error('Checkout Failed:', error);
+    alert(`❌ خطأ: ${error.message}`);
+  }
+}
+
+        // التحقق من تسجيل الدخول وعرض بيانات المستخدم
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            const userData = localStorage.getItem('user');
+            
+            if (!token || !userData) {
+                alert('يجب تسجيل الدخول أولاً');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            try {
+                const user = JSON.parse(userData);
+                document.getElementById('userGreeting').textContent = `مرحباً، ${user.name}`;
+            } catch (e) {
+                console.error('Error parsing user data:', e);
+            }
+        }
+
+        // تسجيل الخروج
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        });
+
+        // إدارة القائمة الجانبية
+        const menu = document.getElementById("sideMenu");
+        const button = document.getElementById("menuButton");
+        const overlay = document.getElementById("overlay");
+
+        function toggleMenu() {
+            menu.classList.toggle("open");
+            button.classList.toggle("open");
+            overlay.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            menu.classList.remove("open");
+            button.classList.remove("open");
+            overlay.classList.remove("active");
+        }
+
+        // عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            fetchRooms();
+        });
+
+        // معالجة الأخطاء العامة
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global error:', {message, source, lineno, colno, error});
+            alert('حدث خطأ في التطبيق. الرجاء التحقق من السجلات.');
+            return true;
+        };
+    </script>
+</body>
+</html>

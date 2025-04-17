@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Flow - Review</title>
+    <link rel="stylesheet" href="reviwe.css">
+</head>
+<body>
+    <header>
+        <img src="images/logo.jpeg" width="150">
+    </header>
+    
+    <!-- زر القائمة -->
+    <div class="toggle-menu-btn" id="menuButton" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- القائمة الجانبية -->
+    <div class="sidebar-menu" id="sideMenu">
+        <a href="home.html">Home</a>
+        <a href="creat_entry.html">Creat_Entry</a>
+        <a href="room.html">Rooms</a>
+        <a href="valve&time.html">valve&time</a>
+        <a href="Features.html">Features</a>
+        <a href="reviwe.html">Review</a>
+        <a href="help.html">Help</a>
+    </div>
+
+    <!-- الغطاء -->
+    <div class="menu-overlay" id="overlay" onclick="closeMenu()"></div>
+
+    <section class="bodyy">
+        <div class="review-container">
+            <div class="review-box">
+                <h2>We Value Your Feedback 😊</h2>
+                <p>Your opinion helps us improve the infusion drip control system. Please rate and share your thoughts.</p>
+                
+                <div class="rating">
+                    <input type="radio" id="star5" name="rating" value="5">
+                    <label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1">★</label>
+                </div>
+                
+                <textarea id="review-text" placeholder="How can we improve our service?"></textarea>
+                
+                <button class="submit-btn" onclick="submitReview()">Submit Feedback</button>
+                
+                <div id="thankYou" class="thank-you">
+                    Thank you for your valuable feedback! We appreciate your time.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-nav">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Contact Us</a>
+        </div>
+        <p>&copy; 2025 Smart Flow. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // وظيفة القائمة الجانبية
+        const menu = document.getElementById("sideMenu");
+        const button = document.getElementById("menuButton");
+        const overlay = document.getElementById("overlay");
+
+        function toggleMenu() {
+            menu.classList.toggle("open");
+            button.classList.toggle("open");
+            overlay.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            menu.classList.remove("open");
+            button.classList.remove("open");
+            overlay.classList.remove("active");
+        }
+
+        // وظيفة إرسال المراجعة
+        async function submitReview() {
+            const reviewText = document.getElementById('review-text').value;
+            const rating = document.querySelector('input[name="rating"]:checked');
+            
+            if (!rating) {
+                alert("Please select a rating before submitting.");
+                return;
+            }
+            
+            if (reviewText.trim() === "") {
+                alert("Please enter your feedback before submitting.");
+                return;
+            }
+            
+            document.getElementById('thankYou').style.display = 'block';
+            document.getElementById('review-text').value = "";
+            
+            // إعادة تعيين التقييم
+            const stars = document.querySelectorAll('input[name="rating"]');
+            stars.forEach(star => star.checked = false);
+            
+            // إخفاء رسالة الشكر بعد 3 ثواني
+            setTimeout(() => {
+                document.getElementById('thankYou').style.display = 'none';
+            }, 3000);
+
+            // إرسال المراجعة إلى الخادم
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({
+                        rating: rating.value,
+                        review: reviewText
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log("Feedback submitted:", data);
+                } else {
+                    alert("Failed to submit feedback. Please try again.");
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                alert('An error occurred while submitting feedback. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

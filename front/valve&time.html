@@ -1,0 +1,282 @@
+<!-- valve&time.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>valve&time</title>
+  <link rel="stylesheet" href="valve.css" />
+</head>
+<body>
+  <header>
+    <div class="top-controls">
+      <div class="toggle-menu-btn" id="menuButton" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </div>
+      <div id="notificationToggle" class="notification-tab" onclick="toggleNotificationPanel()">
+        <span style="font-size: 22px;">🔔</span>
+        <span>Notifications</span>
+        <span id="notifBadge" class="notif-badge hidden">●</span>
+      </div>
+    </div>
+
+    <div class="sidebar-menu" id="sideMenu">
+      <a href="home.html">Home</a>
+      <a href="creat_entry.html">Creat_Entry</a>
+      <a href="room.html">Rooms</a>
+      <a href="valve&time.html">valve&time</a>
+      <a href="Features.html">Features</a>
+      <a href="reviwe.html">Review</a>
+      <a href="help.html">Help</a>
+    </div>
+  </header>
+
+  <div id="notificationsPanel" class="notifications-panel hidden">
+    <h2>🔔 الإشعارات</h2>
+    <ul id="notificationsList"></ul>
+    <button onclick="clearNotifications()">🗑️ مسح الكل</button>
+  </div>
+
+  <br><br>
+  <div class="container">
+    <h1>Smart Valve Control</h1>
+    <div class="time-control">
+      <div class="time-input">
+        <label for="roomSelect">Select Room:</label>
+        <select id="roomSelect" required>
+          <option value="">-- اختر الغرفة --</option>
+        </select>
+      </div>
+      <div class="time-input">
+        <label for="startTime">Start Time (HH:MM):</label>
+        <input type="time" id="startTime" required />
+      </div>
+      <div class="time-input">
+        <label for="endTime">End Time (HH:MM):</label>
+        <input type="time" id="endTime" required />
+      </div>
+      <button id="setTime" class="time-btn">Set Time</button>
+    </div>
+    <h1>Valve Control</h1>
+    <div class="valve-control">
+      <button id="openValve" class="valve-btn open-btn">Open Valve 🔓</button>
+      <button id="closeValve" class="valve-btn close-btn">Close Valve 🔒</button>
+    </div>
+    <div class="status-container">
+      <p class="status" id="valveStatus">Status: Waiting for action</p>
+    </div>
+    <h2>Room Valve Status</h2>
+    <div id="roomStatusContainer" class="room-status"></div>
+  </div>
+
+  <audio id="notifSound" src="sounds/ding.mp3" preload="auto"></audio>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const valveStatus = document.getElementById("valveStatus");
+      const openValveBtn = document.getElementById("openValve");
+      const closeValveBtn = document.getElementById("closeValve");
+      const setTimeBtn = document.getElementById("setTime");
+      const roomSelect = document.getElementById("roomSelect");
+      const roomStatusContainer = document.getElementById("roomStatusContainer");
+
+      loadRooms();
+      loadAllValveStatuses();
+      renderNotifications();
+
+      openValveBtn.addEventListener("click", () => toggleValve("open"));
+      closeValveBtn.addEventListener("click", () => toggleValve("closed"));
+      setTimeBtn.addEventListener("click", setSchedule);
+      roomSelect.addEventListener("change", fetchValveStatus);
+
+      function getSelectedRoomId() {
+        return roomSelect.value;
+      }
+
+      async function loadRooms() {
+        try {
+          const response = await fetch("/api/rooms");
+          const data = await response.json();
+          if (data.success && Array.isArray(data.rooms)) {
+            roomSelect.innerHTML = '<option value="">-- اختر الغرفة --</option>';
+            data.rooms.forEach((room) => {
+              const option = document.createElement("option");
+              option.value = room.id;
+              option.textContent = `Room ${room.room_number}`;
+              roomSelect.appendChild(option);
+            });
+          } else {
+            throw new Error("لم يتم تحميل الغرف بنجاح");
+          }
+        } catch (error) {
+          console.error("فشل تحميل الغرف:", error);
+          alert("حدث خطأ أثناء تحميل الغرف");
+        }
+      }
+
+      async function loadAllValveStatuses() {
+        try {
+          const response = await fetch("/api/valve_status");
+          const data = await response.json();
+          roomStatusContainer.innerHTML = "";
+          data.forEach((item) => {
+            const box = document.createElement("div");
+            box.className = "room-box " + (item.status === "open" ? "room-open" : "room-closed");
+            box.textContent = `${item.status === "open" ? "🟢" : "🔴"} Room ${item.room_id}: ${item.status}`;
+            roomStatusContainer.appendChild(box);
+          });
+        } catch (error) {
+          console.error("فشل تحميل حالات الصمامات:", error);
+        }
+      }
+
+      async function fetchValveStatus() {
+        const room_id = getSelectedRoomId();
+        if (!room_id) return;
+        try {
+          const response = await fetch(`/api/valve_status/${room_id}`);
+          const data = await response.json();
+          updateStatusUI(data.status);
+        } catch (error) {
+          console.error("Error loading valve status:", error);
+          valveStatus.textContent = "Error Loading Status";
+          valveStatus.className = "status error";
+        }
+      }
+
+      function updateStatusUI(status) {
+        if (status === "open") {
+          valveStatus.textContent = "Status: Valve is Open";
+          valveStatus.className = "status open";
+        } else {
+          valveStatus.textContent = "Status: Valve is Closed";
+          valveStatus.className = "status closed";
+        }
+        loadAllValveStatuses();
+      }
+
+      async function toggleValve(action) {
+        const room_id = getSelectedRoomId();
+        if (!room_id) {
+          alert("يرجى اختيار الغرفة أولاً");
+          return;
+        }
+        try {
+          const response = await fetch(`/api/valve_status/${room_id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: action }),
+          });
+          const data = await response.json();
+          updateStatusUI(data.valve_status.status);
+          addNotification(`تم ${action === "open" ? "فتح" : "إغلاق"} الصمام للغرفة رقم ${room_id}`);
+        } catch (error) {
+          console.error("Error updating valve:", error);
+          valveStatus.textContent = "Error updating valve";
+          valveStatus.className = "status error";
+        }
+      }
+
+      async function setSchedule() {
+        const start = document.getElementById("startTime").value;
+        const end = document.getElementById("endTime").value;
+        if (!start || !end) {
+          alert("يجب تحديد وقت البداية والنهاية!");
+          return;
+        }
+        try {
+          const response = await fetch("/api/valve_status/schedule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ start, end }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "فشل في ضبط الجدولة");
+          alert("تم ضبط الجدولة بنجاح!");
+          addNotification(`تم جدولة المغذي من ${start} إلى ${end}`);
+          setTimeout(() => {
+            addNotification("⏰ اقترب انتهاء وقت المغذي!");
+            alert("⏰ تنبيه: اقترب وقت انتهاء المغذي!");
+          }, calculateRemainingTime(end));
+        } catch (error) {
+          console.error("Error setting schedule:", error);
+          alert("حدث خطأ: " + error.message);
+        }
+      }
+
+      function addNotification(message) {
+        const notifications = JSON.parse(localStorage.getItem("notifications") || "[]");
+        const time = new Date().toLocaleTimeString();
+        notifications.push(`[${time}] ${message}`);
+        localStorage.setItem("notifications", JSON.stringify(notifications));
+        renderNotifications();
+        playNotificationSound();
+        showBadge();
+      }
+
+      function playNotificationSound() {
+        const sound = document.getElementById("notifSound");
+        if (sound) {
+          sound.currentTime = 0;
+          sound.play();
+        }
+      }
+
+      function showBadge() {
+        document.getElementById("notifBadge").classList.remove("hidden");
+      }
+
+      function hideBadge() {
+        document.getElementById("notifBadge").classList.add("hidden");
+      }
+
+      function renderNotifications() {
+        const list = document.getElementById("notificationsList");
+        const notifications = JSON.parse(localStorage.getItem("notifications") || "[]");
+        list.innerHTML = "";
+        notifications.reverse().forEach((notif) => {
+          const li = document.createElement("li");
+          li.textContent = notif;
+          list.appendChild(li);
+        });
+      }
+
+      function clearNotifications() {
+        localStorage.removeItem("notifications");
+        renderNotifications();
+      }
+
+      function calculateRemainingTime(endTimeStr) {
+        const now = new Date();
+        const [h, m] = endTimeStr.split(":").map(Number);
+        const target = new Date(now);
+        target.setHours(h, m, 0, 0);
+        const diff = target - now - 5 * 60 * 1000;
+        return diff > 0 ? diff : 1000;
+      }
+    });
+
+    function toggleNotificationPanel() {
+      const panel = document.getElementById("notificationsPanel");
+      panel.classList.toggle("hidden");
+      if (!panel.classList.contains("hidden")) {
+        hideBadge();
+      }
+    }
+
+    const menu = document.getElementById("sideMenu");
+    const button = document.getElementById("menuButton");
+    function toggleMenu() {
+      menu.classList.toggle("open");
+      button.classList.toggle("open");
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+

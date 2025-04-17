@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <title>Create Patient Entry</title>
+  <link rel="stylesheet" href="creat.css"/>
+</head>
+<body>
+
+  <header>
+    <img src="images/logo.jpeg" width="150" />
+    <span id="userGreeting" style="float: right; margin: 10px;"></span>
+  </header>
+
+  <!-- Menu Button -->
+  <div class="toggle-menu-btn" id="menuButton" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+
+  <!-- Sidebar Menu -->
+  <div class="sidebar-menu" id="sideMenu">
+    <a href="home.html">Home</a>
+    <a href="creat_entry.html">Create Entry</a>
+    <a href="room.html">Rooms</a>
+    <a href="valve&time.html">Valve & Time</a>
+    <a href="Features.html">Features</a>
+    <a href="reviwe.html">Review</a>
+    <a href="help.html">Help</a>
+    <a href="#" id="logoutBtn">Logout</a>
+  </div>
+
+  <!-- Overlay -->
+  <div class="menu-overlay" id="overlay" onclick="closeMenu()"></div>
+
+  <br><br><br>
+
+  <div id="main-menu">
+    <img src="images/drip 1.jpeg" alt="drip iv" class="main-img" width="300" height="300" style="display: block; margin: auto;"><br>
+    <div class="menu-buttons">
+      <button class="menu-button create" onclick="openModal()">➕ <br> Create New Entry</button>
+      <button class="menu-button back-button" onclick="showPatients()" id="viewPatientsBtn">👥 <br> View Patients</button>
+      <button class="menu-button review-button" id="reviewAppointmentBtn">📅 <br> Add Review Appointment</button>
+    </div>
+  </div>
+
+  <!-- Patient Data Entry Modal -->
+  <div id="patientModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2>📝 Enter Patient Information</h2>
+      <div id="messageContainer"></div>
+
+      <label>Patient Name *</label>
+      <input type="text" id="patient-name" placeholder="Enter Name" required />
+
+      <label>Age *</label>
+      <input type="number" id="age" placeholder="Enter Age" required />
+
+      <label>Mobile Number</label>
+      <input type="text" id="mobile" placeholder="Enter Mobile Number" />
+
+      <label>Emergency Mobile Number</label>
+      <input type="text" id="emergency" placeholder="Enter Emergency Number" />
+
+      <label>Blood Group *</label>
+      <select id="blood_group" required>
+        <option value="">Select Blood Group</option>
+        <option value="A+">A+</option>
+        <option value="A-">A-</option>
+        <option value="B+">B+</option>
+        <option value="B-">B-</option>
+        <option value="AB+">AB+</option>
+        <option value="AB-">AB-</option>
+        <option value="O+">O+</option>
+        <option value="O-">O-</option>
+        <option value="Unknown">Unknown</option>
+      </select>
+
+      <label>Previous Medical History</label>
+      <input type="text" id="history" placeholder="Type NONE if no history" />
+
+      <label>Doctor's Name *</label>
+      <input type="text" id="doctor" placeholder="Enter Doctor's Name" required />
+
+      <label>Insurance</label>
+      <select id="insurance">
+        <option value="No">No Insurance</option>
+        <option value="Yes">Has Insurance</option>
+      </select>
+
+      <label>Room *</label>
+      <select id="room" required>
+        <option value="">Select Room</option>
+      </select>
+      
+      <label>Admission Date *</label>
+      <input type="date" id="admission_date" required />
+
+      <label>Admission Reason *</label>
+      <input type="text" id="admission_reason" placeholder="Enter admission reason" required />
+
+      <br><br>
+      <div class="btn">
+        <button type="button" class="btn" onclick="savePatient()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Appointment Modal -->
+  <div id="reviewModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeReviewModal()">&times;</span>
+      <h2>📅 Add Review Appointment</h2>
+      <div id="reviewMessageContainer"></div>
+      <br>
+      
+      <label>Patient Name *</label>
+      <select id="review-name" required>
+        <option value="">-- Select Patient --</option>
+      </select>
+
+      <label>Review Date *</label>
+      <input type="date" id="review-date" required />
+
+      <label>Review Time *</label>
+      <input type="time" id="review-time" required />
+
+      <br><br>
+      <div class="btn">
+        <button type="button" class="btn" onclick="saveReview()">✅ Save Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Review Modal -->
+  <div id="editReviewModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeEditReviewModal()">&times;</span>
+      <h2>✏️ Edit Review Appointment</h2>
+      <div id="editReviewMessageContainer"></div>
+      <br>
+      
+      <input type="hidden" id="edit-review-id">
+      
+      <label>Review Date *</label>
+      <input type="date" id="edit-review-date" required />
+
+      <label>Review Time *</label>
+      <input type="time" id="edit-review-time" required />
+
+      <br><br>
+      <div class="btn">
+        <button type="button" class="btn" onclick="updateReviewTime()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patients List Section -->
+  <div id="patientsSection" style="display:none; margin: 40px auto; width: 90%; max-width: 800px;">
+    <span class="close" onclick="closePatientsSection()">&times;</span>
+    <h2 style="text-align:center;">📋 Patients List</h2>
+    <input type="text" id="searchInput" placeholder="🔍 Search by name..." onkeyup="filterPatients()" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Age</th>
+          <th>Mobile</th>
+          <th>Emergency</th>
+          <th>History</th>
+          <th>Doctor</th>
+          <th>Insurance</th>
+          <th>Admission Date</th>
+          <th>Review</th>
+        </tr>
+      </thead>
+      <tbody id="patientsTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Authentication and Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Please login first');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      // Display username
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        document.getElementById('userGreeting').textContent = `Welcome, ${user.name}`;
+      }
+
+      fetchAvailableRooms();
+      
+      // Add event listener for review button
+      document.getElementById('reviewAppointmentBtn').addEventListener('click', openReviewModal);
+    });
+
+    // Logout functionality
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    });
+
+    // Menu functions
+    const menu = document.getElementById("sideMenu");
+    const button = document.getElementById("menuButton");
+    const overlay = document.getElementById("overlay");
+
+    function toggleMenu() {
+      menu.classList.toggle("open");
+      button.classList.toggle("open");
+      overlay.classList.toggle("active");
+    }
+
+    function closeMenu() {
+      menu.classList.remove("open");
+      button.classList.remove("open");
+      overlay.classList.remove("active");
+    }
+
+    // Modal functions
+    function openModal() {
+      document.getElementById("patientModal").style.display = "block";
+      document.getElementById("messageContainer").innerHTML = '';
+      // Reset form
+      document.getElementById("patientModal").querySelectorAll('input').forEach(input => {
+        if (input.type !== 'button') input.value = '';
+      });
+      document.getElementById("blood_group").value = '';
+      document.getElementById("insurance").value = 'No';
+    }
+
+    function closeModal() {
+      document.getElementById("patientModal").style.display = "none";
+    }
+
+    function openReviewModal() {
+      console.log("Opening review modal");
+      document.getElementById("reviewModal").style.display = "block";
+      document.getElementById("reviewMessageContainer").innerHTML = '';
+      populatePatientNames();
+    }
+
+    function closeReviewModal() {
+      document.getElementById("reviewModal").style.display = "none";
+    }
+
+    function openEditReviewModal(reviewId, currentDate, currentTime) {
+      document.getElementById("editReviewModal").style.display = "block";
+      document.getElementById("edit-review-id").value = reviewId;
+      document.getElementById("edit-review-date").value = currentDate;
+      document.getElementById("edit-review-time").value = currentTime;
+    }
+
+    function closeEditReviewModal() {
+      document.getElementById("editReviewModal").style.display = "none";
+    }
+
+    function closePatientsSection() {
+      document.getElementById("patientsSection").style.display = "none";
+      document.getElementById("main-menu").style.display = "block";
+    }
+
+    // Fetch available rooms from API
+    async function fetchAvailableRooms() {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/rooms/available', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to fetch rooms');
+        }
+        
+        const rooms = await response.json();
+        const roomSelect = document.getElementById('room');
+        roomSelect.innerHTML = '<option value="">Select Room</option>';
+        
+        if (rooms.length === 0) {
+          showMessage('warning', 'No available rooms found');
+          return;
+        }
+        
+        rooms.forEach(room => {
+          const option = document.createElement('option');
+          option.value = room.id;
+          option.textContent = `Room ${room.room_number} (Floor ${room.floor})`;
+          roomSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Fetch error:', error);
+        showMessage('error', `Error: ${error.message}`);
+      }
+    }
+
+    // Save patient data
+    async function savePatient() {
+      const messageContainer = document.getElementById('messageContainer');
+      messageContainer.innerHTML = '';
+
+      const formData = {
+        name: document.getElementById("patient-name").value.trim(),
+        age: document.getElementById("age").value,
+        phone: document.getElementById("mobile").value.trim(),
+        emergency_phone: document.getElementById("emergency").value.trim(),
+        medical_history: document.getElementById("history").value.trim(),
+        doctor_name: document.getElementById("doctor").value.trim(),
+        insurance: document.getElementById("insurance").value,
+        blood_group: document.getElementById("blood_group").value,
+        room_id: document.getElementById("room").value,
+        admission_date: document.getElementById("admission_date").value,
+        admission_reason: document.getElementById("admission_reason").value.trim()
+      };
+
+      // Validate required fields
+      if (!formData.name || !formData.age || !formData.doctor_name ||
+          !formData.blood_group || !formData.room_id || !formData.admission_date) {
+        showMessage('error', 'Please fill all required fields (marked with *)');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('authToken');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        // Save patient data
+        const response = await fetch('/api/patients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            ...formData,
+            user_id: user.id
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to save patient');
+        }
+
+        const data = await response.json();
+        showMessage('success', 'Patient data saved successfully!');
+
+        // Reserve the room
+        await fetch(`/api/rooms/${formData.room_id}/reserve`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ patientId: data.patient.id })
+        });
+
+        setTimeout(() => {
+          closeModal();
+          window.location.href = "room.html";
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error saving patient:', error);
+        showMessage('error', `Error: ${error.message}`);
+      }
+    }
+
+    // Show message in modal
+    function showMessage(type, message) {
+      const messageContainer = document.getElementById('messageContainer');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `${type}-message`;
+      messageDiv.textContent = message;
+      messageContainer.appendChild(messageDiv);
+    }
+
+    // Populate patient names for review
+    async function populatePatientNames() {
+      const select = document.getElementById("review-name");
+      select.innerHTML = '<option value="">-- Select Patient --</option>';
+
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/patients', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch patients');
+        }
+
+        const data = await response.json();
+        console.log("Patients data:", data);
+        
+        if (!data.patients || !Array.isArray(data.patients)) {
+          throw new Error('Invalid patients data received');
+        }
+
+        data.patients.forEach(patient => {
+          const option = document.createElement("option");
+          option.value = patient.id;
+          option.textContent = patient.name;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error fetching patients:', error);
+        document.getElementById("reviewMessageContainer").innerHTML = 
+          `<div class="error-message">Error loading patient names: ${error.message}</div>`;
+      }
+    }
+
+    // Save review appointment
+    async function saveReview() {
+      try {
+        const patientId = document.getElementById("review-name").value;
+        const date = document.getElementById("review-date").value;
+        const time = document.getElementById("review-time").value;
+
+        if (!patientId || !date || !time) {
+          throw new Error("الرجاء تعبئة جميع الحقول المطلوبة");
+        }
+
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          throw new Error("جلسة العمل منتهية، يرجى تسجيل الدخول مرة أخرى");
+        }
+
+        const response = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            patient_id: patientId,
+            review_date: date,
+            review_time: time
+          })
+        });
+
+        const data = await response.text();
+        let result;
+        
+        try {
+          result = JSON.parse(data);
+        } catch (e) {
+          throw new Error("استجابة غير صالحة من السيرفر: " + data.substring(0, 50));
+        }
+
+        if (!response.ok) {
+          throw new Error(result.error || "فشل في حفظ الموعد");
+        }
+
+        alert('تم حفظ الموعد بنجاح');
+        closeReviewModal();
+        
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById("reviewMessageContainer").innerHTML = 
+          `<div class="error-message">${error.message}</div>`;
+      }
+    }
+
+    // Update review time and date
+    async function updateReviewTime() {
+      const reviewId = document.getElementById("edit-review-id").value;
+      const date = document.getElementById("edit-review-date").value;
+      const time = document.getElementById("edit-review-time").value;
+
+      if (!reviewId || !date || !time) {
+        document.getElementById("editReviewMessageContainer").innerHTML = 
+          '<div class="error-message">الرجاء تعبئة جميع الحقول</div>';
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/reviews/${reviewId}/update-time`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            review_date: date,
+            review_time: time
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to update review time');
+        }
+
+        alert('تم تحديث موعد المراجعة بنجاح');
+        closeEditReviewModal();
+        // Reload the review history if on the patient reviews page
+        if (window.location.pathname.includes('patients reviews.html')) {
+          const patientId = new URLSearchParams(window.location.search).get('id');
+          loadReviewHistory(patientId);
+        }
+      } catch (error) {
+        console.error('Error updating review time:', error);
+        document.getElementById("editReviewMessageContainer").innerHTML = 
+          `<div class="error-message">${error.message}</div>`;
+      }
+    }
+
+    // Show patients list
+    async function showPatients() {
+      try {
+        const token = localStorage.getItem('authToken');
+        console.log("🚀 التوكن المستخدم:", token);
+        if (!token) {
+          alert('Please login first');
+          window.location.href = '/login.html';
+          return;
+        }
+
+        const response = await fetch('/api/patients/patients-with-reviews', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const text = await response.text();
+
+        if (text.startsWith('<!DOCTYPE html>')) {
+          alert('Session expired. Please log in again.');
+          localStorage.removeItem('authToken');
+          window.location.href = '/login.html';
+          return;
+        }
+
+        const data = JSON.parse(text);
+        if (!data.success && data.error) throw new Error(data.error);
+
+        const tableBody = document.getElementById("patientsTableBody");
+        tableBody.innerHTML = "";
+
+        if (!data.patients || data.patients.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="9" class="text-center">No patients found</td></tr>';
+        } else {
+          data.patients.forEach(patient => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td><a href="patients reviews.html?id=${patient.id}" class="patient-link">${patient.name || 'N/A'}</a></td>
+              <td>${patient.age || 'N/A'}</td>
+              <td>${patient.phone || 'N/A'}</td>
+              <td>${patient.emergency_phone || 'N/A'}</td>
+              <td>${patient.medical_history || 'N/A'}</td>
+              <td>${patient.doctor_name || 'N/A'}</td>
+              <td>${patient.insurance || 'No'}</td>
+              <td>${patient.admission_date ? new Date(patient.admission_date).toLocaleDateString() : 'N/A'}</td>
+              <td>${patient.review_date ? `${patient.formatted_review_date} ${patient.formatted_review_time}` : 'N/A'}</td>
+            `;
+            tableBody.appendChild(row);
+          });
+        }
+
+        document.getElementById("patientsSection").style.display = "block";
+        document.getElementById("main-menu").style.display = "none";
+
+      } catch (error) {
+        console.error("Error in showPatients:", error);
+        alert(error.message || 'Error loading patient data');
+
+        if (error.message.includes('token') || error.message.includes('login')) {
+          localStorage.removeItem('authToken');
+          window.location.href = '/login.html';
+        }
+      }
+    }
+
+    // Filter patients by name
+    function filterPatients() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const rows = document.getElementById("patientsTableBody").getElementsByTagName("tr");
+
+      Array.from(rows).forEach(row => {
+        const nameCell = row.getElementsByTagName("td")[0];
+        const nameText = nameCell.textContent || nameCell.innerText;
+        row.style.display = nameText.toLowerCase().includes(input) ? "" : "none";
+      });
+    }
+
+    // Load review history for a patient
+    async function loadReviewHistory(patientId) {
+  try {
+    const res = await fetch(`/api/reviews/patient/${patientId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    });
+    const data = await res.json();
+
+    console.log('Received review history data:', data); // تسجيل البيانات المستلمة
+
+    const tbody = document.querySelector("#reviewHistoryTable tbody");
+    tbody.innerHTML = "";
+
+    if (!data.history || data.history.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='5'>لا توجد مراجعات مسجلة</td></tr>";
+      return;
+    }
+
+    data.history.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.review_date}</td>
+        <td>${formatTime(row.review_time)}</td>
+        <td><textarea class="doctor-notes" id="doctorNotes-${row.id}" placeholder="ملاحظات الطبيب">${row.doctor_notes || ''}</textarea></td>
+        <td>${row.admission_reason || '—'}</td>
+        <td><button onclick="updateNotes('${row.id}')">تحديث الملاحظات</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Error loading review history:", err);
+    document.querySelector("#reviewHistoryTable tbody").innerHTML =
+      "<tr><td colspan='5'>⚠️ فشل في تحميل البيانات</td></tr>";
+  }
+}
+
+// دالة لتحويل الوقت إلى تنسيق 12 ساعة مع AM/PM
+function formatTime(time) {
+  const [hour, minute] = time.split(":");
+  let hour12 = parseInt(hour, 10);
+  const ampm = hour12 >= 12 ? 'PM' : 'AM';
+  hour12 = hour12 % 12;
+  if (hour12 === 0) hour12 = 12; // لضمان أن الساعة 0 تكون 12
+  return `${hour12}:${minute} ${ampm}`;
+}
+
+
+    // Update doctor notes
+    async function updateNotes(reviewId) {
+      const notes = document.getElementById(`doctorNotes-${reviewId}`).value;
+
+      if (!notes.trim()) {
+        alert('الرجاء إدخال ملاحظات الطبيب.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/reviews/update/${reviewId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify({ doctor_notes: notes })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          alert('تم تحديث الملاحظات بنجاح');
+        } else {
+          alert(`فشل في تحديث الملاحظات: ${data.error}`);
+        }
+      } catch (err) {
+        console.error('Error updating notes:', err);
+        alert('حدث خطأ أثناء تحديث الملاحظات');
+      }
+    }
+  </script>
+
+  <br><br><br>
+</body>
+</html>
+
